@@ -9,10 +9,10 @@ Modela cuenta, rol, sesión, sujeto, periodo y evento de auditoría para todo el
 | Marca | Significado |
 | --- | --- |
 | **Físico** | Nombre de tabla y columnas tomados de la PR #89 (migración `V202611240156__comun_cuenta_y_sesion.sql`, ENT-COM-14), tal cual. |
-| **Lógico** | Nombre del atributo en las fichas ENT-COM-03, ENT-COM-04 y ENT-COM-11 del Documento general. El nombre físico lo fija la PR #91 (`sujeto`, `periodo`) y está **por confirmar** al fusionarse. |
-| **Propuesto** | Dato que la tarea no entrega y que se infiere de la lógica de la relación; debe confirmarlo quien revisa. |
+| **Lógico** | Nombre del atributo en las fichas ENT-COM-03 y ENT-COM-04 del Documento general. El nombre físico lo fija la PR #91 (`sujeto`, `periodo`) y está **por confirmar** al fusionarse. |
+| **Propuesto** | Dato que la tarea no entrega y que se infiere de la lógica de la relación, o nombre fijado por la revisión y aún sin migración (`evento_auditoria`); debe confirmarlo quien revisa. |
 
-Pendientes explícitos de este documento: (1) columnas físicas de `sujeto` y `periodo` según la PR #91; (2) tipo de PK de todas las tablas; (3) catálogo de valores de `accion` y `entidad_tipo` de `evento_auditoria`.
+Pendientes explícitos de este documento: (1) columnas físicas de `sujeto` y `periodo` según la PR #91; (2) tipo de PK de todas las tablas; (3) catálogo de valores de `accion` y `entidad_tipo` de `evento_auditoria`; (4) nombres de `id_evaluacion` e `id_evaluacion_subprueba`, por cruzar con DOC-33; (5) si las acciones del sistema usan una cuenta técnica en `cuenta`.
 
 ## 1. Cuenta, rol y sesión (físico, PR #89)
 
@@ -78,19 +78,21 @@ La persona evaluada. **No es una cuenta**: puede existir sin cuenta, y el nombre
 | `fechaFin` | — | No | No anterior a `fechaInicio` si ambas existen. |
 | `activo` | — | Sí | Disponibilidad administrativa. |
 
-## 3. Evento de auditoría (lógico, ENT-COM-11)
+## 3. Evento de auditoría (`evento_auditoria`, propuesto desde ENT-COM-11)
 
-Registra quién hizo qué, sobre qué y cuándo.
+Registra quién hizo qué, sobre qué y cuándo. El nombre físico `evento_auditoria` y las columnas en snake_case, como en la PR #89, los fijó la revisión de Gabriel Pérez Calero (comentario del 24/11 a las 11:22 en DOC-35-COM). La migración todavía no existe: hasta que se fusione, son nombres **propuestos**.
 
-| Pregunta | Atributo lógico | Clave | Obligatorio | Descripción |
+| Pregunta | Columna | Clave | Obligatorio | Descripción |
 | --- | --- | --- | --- | --- |
-| — | `idEvento` | PK | Sí | Identificador del evento. |
-| **Quién** | `actorRef` | referencia a `cuenta.id_cuenta` | Sí | La cuenta o identidad técnica que actuó. No es el `sujeto` por defecto. |
-| **Qué** | `accion` | — | Sí | Tipo de acción (catálogo por validar; lo fija el servidor). |
-| **Sobre qué** | `entidadTipo`, `entidadId` | — | Sí | Entidad afectada e id; deben ser coherentes entre sí. |
-| **Cuándo** | `ocurridoEn` | — | Sí | Momento oficial, fijado por el servidor. |
-| Contexto | `idEvaluacion`, `idEvaluacionSubprueba` | FK opcionales | No | Evaluación y ejecución afectadas; obligatoria la evaluación en eventos de ejecución o resultado, no en los administrativos globales. |
+| — | `id_evento` | PK | Sí | Identificador del evento. |
+| **Quién** | `id_cuenta` | FK → `cuenta.id_cuenta` | Sí | Cuenta que actuó. No es el `sujeto` por defecto. |
+| **Qué** | `accion` | — | Sí | Tipo de acción (catálogo por validar; lo fija el servidor). Se usa `accion` y no `tipo`, para no confundirlo con `entidad_tipo`. |
+| **Sobre qué** | `entidad_tipo`, `entidad_id` | — | Sí | Entidad afectada e id; deben ser coherentes entre sí. |
+| **Cuándo** | `ocurrido_en` | — | Sí | Momento oficial, fijado por el servidor. |
+| Contexto | `id_evaluacion`, `id_evaluacion_subprueba` | FK opcionales | No | Evaluación y ejecución afectadas; obligatoria la evaluación en eventos de ejecución o resultado, no en los administrativos globales. Nombres por cruzar con el tema DOC-33. |
 | Detalle | `detalle` | — | No | Motivo y referencias. Nunca imágenes, claves ni respuestas completas. |
+
+El atributo lógico `actorRef` de ENT-COM-11 («cuenta o identidad técnica») se reemplaza por `id_cuenta`, que sí puede ser clave foránea y es lo que sostiene la cardinalidad 1 / 0..N de la sección 4. Si hacen falta eventos de una identidad técnica (acciones del sistema sin persona), se resuelve con una cuenta técnica en `cuenta`, y queda como decisión abierta (ver pendientes).
 
 ## 4. Cardinalidades
 
@@ -100,16 +102,17 @@ Formato «padres / hijos» (padres por hijo y hijos por padre).
 | --- | --- | --- |
 | `cuenta` → `cuenta_rol` | 1 / 0..N | Una cuenta puede tener varios roles. |
 | `cuenta` → `sesion` | 1 / 0..N | Una cuenta abre sesiones en distintos momentos. |
-| `cuenta` → evento de auditoría (actor) | 1 / 0..N | Cada evento tiene un actor; una cuenta genera muchos eventos. |
+| `cuenta` → `evento_auditoria` (`id_cuenta`) | 1 / 0..N | Cada evento tiene una cuenta como actor; una cuenta genera muchos eventos. |
 | `sujeto` → evaluación | 1 / 0..N | Cada intento identifica a su titular; el alta del sujeto puede ser anterior. |
 | `periodo` → evaluación | 1 / 0..N | Un periodo reúne muchas evaluaciones. |
-| evaluación → evento de auditoría | 0..1 / 0..N | El evento administrativo puede no pertenecer a ninguna evaluación. |
+| evaluación → `evento_auditoria` | 0..1 / 0..N | El evento administrativo puede no pertenecer a ninguna evaluación. |
 
 ## 5. Criterios de aceptación
 
 - [x] Usa los nombres de la PR #89 tal cual en `cuenta`, `cuenta_rol` y `sesion`.
 - [x] `sujeto` y `cuenta` son entidades distintas, con propósito y claves propias.
 - [x] Cardinalidades escritas (sección 4).
+- [x] Auditoría con `evento_auditoria`, columnas en snake_case y `id_cuenta` como FK → `cuenta.id_cuenta` (corrección de la revisión del 24/11).
 - [ ] Pendiente: confirmar con la PR #91 los nombres físicos de `sujeto` y `periodo`. Mientras no se fusione, se usan los atributos lógicos de ENT-COM-03 y ENT-COM-04.
 
 ## Fuentes
@@ -117,3 +120,4 @@ Formato «padres / hijos» (padres por hijo y hijos por padre).
 - Tarea ClickUp DOC-35-COM (columnas de #89 y regla «sujeto ≠ cuenta»).
 - PR #89 «[GEN-06-BE] Persistir cuentas y sesiones…» (en borrador, no fusionada al 2026-11-24): nombres de tablas, correo único y resúmenes.
 - Documento general, fichas ENT-COM-03, ENT-COM-04 y ENT-COM-11, según su transcripción en S02-WEI-DOC-07 v01.
+- Comentario de revisión de Gabriel Pérez Calero en DOC-35-COM (24/11/2026, 11:22): nombre físico, snake_case y `id_cuenta`.
