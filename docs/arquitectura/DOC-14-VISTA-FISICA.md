@@ -20,7 +20,7 @@ Weill **no tiene despliegue propio**. Es código (React, Spring Boot) y tablas (
 
 ## 2. Diagrama de despliegue
 
-El archivo editable en Enterprise Architect (EA) no se generó aquí: esta sesión no puede crear ni abrir archivos `.eap/.qea`. El diagrama de abajo está en Mermaid para pasarlo a EA con los mismos nodos, estereotipos y relaciones.
+La imagen del diagrama (`S02-WEI-DOC-14_diagrama-despliegue_v01.png` y su fuente `.svg`) se entrega junto a este documento. El archivo editable en Enterprise Architect (EA) no se generó aquí: esta sesión no puede crear ni abrir archivos `.eap/.qea`; hay que recrearlo en EA con los mismos nodos, estereotipos y relaciones. Debajo está la misma vista en Mermaid.
 
 ```mermaid
 flowchart LR
