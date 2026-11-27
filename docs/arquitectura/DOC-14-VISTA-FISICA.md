@@ -2,8 +2,8 @@
 
 | Campo | Valor |
 | --- | --- |
-| Código | S02-WEI-DOC-14 · versión v01 (borrador para revisión) |
-| Fecha | 24/11/2026 |
+| Código | S02-WEI-DOC-14 · versión v02 (borrador para revisión; v01 del 24/11/2026) |
+| Fecha | 27/11/2026 |
 | Autor | Diego Martínez (con Alejandra Morales; reparto según la tarea) |
 | Base | `compose.yaml`, `deploy/*`, `.github/workflows/*`, `backend/src/main/resources/application.yml`, `docs/equipos/CONFIGURACION-GITHUB.md` (estado del repositorio al 23/11/2026) |
 | Revisión independiente | **Pendiente.** No se autoaprueba. |
@@ -20,7 +20,7 @@ Weill **no tiene despliegue propio**. Es código (React, Spring Boot) y tablas (
 
 ## 2. Diagrama de despliegue
 
-La imagen del diagrama (`S02-WEI-DOC-14_diagrama-despliegue_v01.png` y su fuente `.svg`) se entrega junto a este documento. El archivo editable en Enterprise Architect (EA) no se generó aquí: esta sesión no puede crear ni abrir archivos `.eap/.qea`; hay que recrearlo en EA con los mismos nodos, estereotipos y relaciones. Debajo está la misma vista en Mermaid.
+La imagen del diagrama (`S02-WEI-DOC-14_diagrama-despliegue_v02.png` y su fuente `.svg`) se entrega junto a este documento. **Pendiente del equipo:** recrear el diagrama en Enterprise Architect (EA) con los mismos nodos, estereotipos y relaciones del SVG, y subir el archivo editable a la carpeta de entrega. Debajo está la misma vista en Mermaid.
 
 ```mermaid
 flowchart LR
@@ -77,7 +77,7 @@ flowchart LR
 ## 4. Flujos de datos
 
 1. **Carga de la interfaz:** navegador → `web:80` (archivos estáticos; cualquier ruta que no sea `/api` devuelve `index.html`, por lo que `/weill/...` lo resuelve el enrutador de React).
-2. **Llamadas de la aplicación:** navegador → `/api/*` en Nginx → `backend:8080`. Las rutas de Weill pertenecerán a `/api/v1/...` según el contrato de DOC-05 (aún por cerrar).
+2. **Llamadas de la aplicación:** navegador → `/api/*` en Nginx → `backend:8080`. Según DOC-09 v02 (borrador en revisión), Weill no tiene rutas propias: usa las operaciones comunes de `docs/api/openapi.yaml` (E3 a E9, E11, E12 y E24 a E31) bajo `/api/v1`.
 3. **Persistencia:** backend → `db:5432` por JDBC. Las respuestas del evaluado y los eventos de auditoría se guardan solo aquí; el navegador no accede a la base.
 4. **Migraciones:** al arrancar, Flyway aplica `db/migration` y Hibernate solo **valida** (`ddl-auto: validate`); no crea tablas.
 5. **Observabilidad:** `/actuator/health` y `/swagger-ui` salen por Nginx; Actuator expone solo `health` e `info`.
@@ -114,11 +114,27 @@ flowchart LR
 | D-01 | Alojamiento de las imágenes de láminas | Psicología + Integración |
 | D-02 | Si el tiempo límite (H-01) se controla en servidor o cliente cambia qué dato se guarda y dónde | Psicología + Desarrollo |
 
-## 8. Dependencias y verificación
+## 8. Coherencia con otros documentos
+
+| Documento | Estado en ClickUp (27/11/2026) | Resultado de la comprobación |
+| --- | --- | --- |
+| DOC-09 · contratos API | in review (v02, borrador) | **Coherente.** Weill usa operaciones comunes sin rutas propias, así que no agrega servicios ni puertos. La brecha de DOC-09 sobre cómo cerrar una subprueba sin límite de tiempo es de contrato; no cambia los nodos, pero se relaciona con D-02. |
+| DOC-03 · requisitos no funcionales | completed | **Pendiente.** No se contrastaron los límites de recursos (R-05) con sus requisitos. |
+| DOC-13 · vista de desarrollo | in review | **Pendiente.** Falta comprobar que los paquetes del backend y del frontend coinciden con los artefactos de la sección 3. |
+| DOC-12 · vista de procesos | blocked | **Pendiente explícito** hasta que se desbloquee. |
+
+## 9. Dependencias y verificación
 
 - Coherencia con 03 (requisitos no funcionales), 09, 13 y base DOC-12: **por contrastar** cuando esos documentos estén publicados; este borrador se apoya solo en el repositorio.
 - Criterio «coincide con la infraestructura real»: cada fila marcada Implementado se verificó contra el archivo citado. Lo que dice el VPS (versión de Docker, SO, dominio, respaldos) **no se verificó** porque no está en el repositorio.
 
-## 9. Fuentes
+## 10. Fuentes
 
 `compose.yaml`; `deploy/compose.yaml`, `deploy/backend.Dockerfile`, `deploy/frontend.Dockerfile`, `deploy/nginx.conf`; `.github/workflows/ci.yml` y `deploy.yml`; `backend/src/main/resources/application.yml`; `backend/pom.xml`; `database/README.md`; `docs/equipos/CONFIGURACION-GITHUB.md` §5; `docs/arquitectura/README.md`; controlador `CatalogoTestsController`; texto de la tarea S02-WEI-DOC-14 en ClickUp.
+
+## Historial
+
+| Versión | Fecha | Autor | Cambio |
+| --- | --- | --- | --- |
+| v01 | 24/11/2026 | Diego Martínez | Borrador inicial |
+| v02 | 27/11/2026 | Diego Martínez | Atiende la revisión cruzada del 26/11: coherencia con DOC-09, DOC-03, DOC-13 y DOC-12 (sección 8); pendiente de EA redactado en términos del equipo; versión final en PDF; enlaces directos en la tarea |
